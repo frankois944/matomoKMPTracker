@@ -38,7 +38,7 @@ dependencies {
 }
 ```
 
-Replace `<latest-version>` with the latest version published on Maven Central (![Maven Central Version](https://img.shields.io/maven-central/v/io.github.frankois944/matomoKMPTracker)).
+Replace `<latest-version>` with the latest version published on Maven Central [![Maven Central Version](https://img.shields.io/maven-central/v/io.github.frankois944/matomoKMPTracker)](https://central.sonatype.com/artifact/io.github.frankois944/matomoKMPTracker).
 
 
 ## Quick start
