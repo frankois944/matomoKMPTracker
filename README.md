@@ -7,7 +7,6 @@
 A lightweight, Kotlin Multiplatform (KMP) client tracker for [Matomo](https://matomo.org/). It lets you track page views, events, goals, on‑site search, content interactions, and e‑commerce across Android, iOS, tvOS, watchOS, macOS, Desktop (JVM), JavaScript, and WASM from one shared Kotlin codebase.
 
 - Persisted offline queue (SQLDelight) with automatic retries
-- Batched dispatch using Ktor HTTP client
 - Heartbeat pings to keep long visits alive
 - Custom dimensions, campaign parameters, and user identification
 - Pluggable dispatcher and queue backends
