@@ -1,7 +1,6 @@
 package io.github.frankois944.matomoKMPTracker.dispatcher
 
 import io.github.frankois944.matomoKMPTracker.Event
-import io.ktor.client.HttpClient
 
 public interface Dispatcher {
     public val baseURL: String

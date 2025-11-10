@@ -1,7 +1,6 @@
 package io.github.frankois944.matomoKMPTracker.utils
 
 import kotlin.random.Random
-import kotlin.uuid.Uuid
 
 internal object UuidGenerator {
     private fun Byte.toHex(): String =

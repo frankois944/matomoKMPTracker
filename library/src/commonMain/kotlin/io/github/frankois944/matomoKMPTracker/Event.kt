@@ -2,7 +2,7 @@
 
 package io.github.frankois944.matomoKMPTracker
 
-import io.ktor.http.encodeURLParameter
+import io.ktor.http.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
@@ -21,10 +21,7 @@ public class Event internal constructor(
     public val siteId: Int,
     public var visitor: Visitor? = null,
     public val isCustomAction: Boolean,
-    public val date: Long =
-        Clock.System
-            .now()
-            .epochSeconds,
+    public val date: Long = dateCreatedInSecond,
     public val url: String?,
     public val actionName: List<String>,
     public val language: String? = Device.create().language,

@@ -13,14 +13,10 @@ import io.github.frankois944.matomoKMPTracker.queue.Queue
 import io.github.frankois944.matomoKMPTracker.queue.enqueue
 import io.github.frankois944.matomoKMPTracker.utils.ConcurrentMutableList
 import io.github.frankois944.matomoKMPTracker.utils.startTimer
-import io.ktor.http.Url
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import io.ktor.http.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

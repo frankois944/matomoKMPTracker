@@ -2,15 +2,14 @@ CREATE TABLE trackingCache (
   uuid TEXT PRIMARY KEY NOT NULL,
   scope TEXT NOT NULL,
   value BLOB NOT NULL,
-  timestamp INTEGER NOT NULL,
-  nanoSecond INTEGER NOT NULL
+  timestamp INTEGER NOT NULL
 );
 
 CREATE INDEX trackingCache_key ON trackingCache(uuid);
 
 insertUuid:
-INSERT OR REPLACE INTO trackingCache (uuid, scope, value, timestamp, nanoSecond)
-VALUES (?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO trackingCache (uuid, scope, value, timestamp)
+VALUES (?, ?, ?, ?);
 
 deleteUuid:
 DELETE FROM trackingCache WHERE uuid = ?;
@@ -27,7 +26,7 @@ SELECT * FROM trackingCache WHERE uuid = ? AND scope = ?;
 selectWithLimit:
 SELECT * FROM trackingCache
 WHERE scope = ?
-ORDER BY timestamp, nanoSecond ASC
+ORDER BY timestamp ASC
 LIMIT ?;
 
 selectUuids:

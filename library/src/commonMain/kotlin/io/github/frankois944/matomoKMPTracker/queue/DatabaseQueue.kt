@@ -6,10 +6,8 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.github.frankois944.matomoKMPTracker.CacheDatabase
 import io.github.frankois944.matomoKMPTracker.Event
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
@@ -32,8 +30,7 @@ internal class DatabaseQueue(
                     uuid = event.uuid,
                     scope = scope,
                     value_ = data,
-                    timestamp = event.dateCreatedInSecond,
-                    nanoSecond = event.dateCreatedOfNanoSecond.toLong(),
+                    timestamp = "${event.dateCreatedInSecond}${event.dateCreatedOfNanoSecond}".toLong(),
                 )
             }
         }

@@ -2,7 +2,6 @@
 
 package io.github.frankois944.matomoKMPTracker.preferences
 
-import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.github.frankois944.matomoKMPTracker.CacheDatabase
 import kotlin.time.ExperimentalTime
