@@ -58,7 +58,7 @@ public class Tracker private constructor(
      * Per default it is a `DefaultLogger` with a `minLevel` of `LogLevel.warning`.
      * You can set your own Logger with a custom `minLevel` or a complete custom logging mechanism.
      */
-    public var logger: MatomoTrackerLogger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Warning)
+    public var logger: MatomoTrackerLogger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
 
     init {
         require(url.endsWith("matomo.php")) {
@@ -81,6 +81,7 @@ public class Tracker private constructor(
     }
 
     internal suspend fun build(): Tracker {
+        withContext(Dispatchers.Default) {
             val prefix = "${siteId}_${siteUrl.host}"
             // Dispatcher
             dispatcher =
@@ -94,8 +95,8 @@ public class Tracker private constructor(
                 )
             // Database
             val database = createDatabase(DriverFactory())
-        this.queue = customQueue ?: DatabaseQueue(database, prefix)
-        this.userPreferences = UserPreferences(database, prefix)
+            this@Tracker.queue = customQueue ?: DatabaseQueue(database, prefix)
+            this@Tracker.userPreferences = UserPreferences(database, prefix)
 
             // Startup
             startNewSession()
@@ -103,6 +104,7 @@ public class Tracker private constructor(
             if (userPreferences?.isHeartbeatEnabled() == true) {
                 heartbeat.start()
             }
+        }
         return this
     }
 
@@ -529,7 +531,6 @@ public class Tracker private constructor(
     /**
      * Resets all session, visitor and campaign information.
      *
-     * This function should only be called from the main thread
      * After calling this method this instance behaves like the app has been freshly installed.
      */
     public fun reset() {
