@@ -47,7 +47,6 @@ class EventTestAndroid {
                         siteId = siteId,
                         context = ApplicationProvider.getApplicationContext(),
                     )
-                tracker.queue?.removeAll()
                 val nbVisit = 3
                 for (i in 1..nbVisit) {
                     tracker.startNewSession()
@@ -65,11 +64,8 @@ class EventTestAndroid {
                     delay(50.milliseconds)
                     tracker.trackView(listOf("index6"))
                     delay(50.milliseconds)
-                    tracker.dispatchBatch()
                 }
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(5.seconds)
+                delay(10.seconds)
             }
         }
 }

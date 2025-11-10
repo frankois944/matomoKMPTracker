@@ -191,30 +191,31 @@ class EventTest {
                         url = "https://matomo.spmforkmp.eu/matomo.php",
                         siteId = siteId,
                     )
-                tracker.trackOrder(
-                    id = Uuid.random().toHexString(),
-                    items =
-                        listOf(
-                            OrderItem(
-                                sku = "SKU 1",
-                                name = "product_1",
-                                category = "cat_1",
-                                price = 100.0f,
-                                quantity = 1,
-                            ),
-                            OrderItem(
-                                sku = "SKU 2",
-                                name = "product_2",
-                                category = "cat_2",
-                                price = 10.0f,
-                                quantity = 10,
-                            ),
+                val items =
+                    listOf(
+                        OrderItem(
+                            sku = "SKU-001",
+                            name = "Running Shoes",
+                            category = "Shoes",
+                            price = 89.99f,
+                            quantity = 1,
                         ),
-                    revenue = 42.0f,
-                    subTotal = 21.0f,
-                    tax = 4.0f,
-                    shippingCost = 10.0f,
-                    discount = 12.0f,
+                        OrderItem(
+                            sku = "SKU-002",
+                            name = "Socks",
+                            category = "Accessories",
+                            price = 9.99f,
+                            quantity = 2,
+                        ),
+                    )
+                tracker.trackOrder(
+                    id = "ORDER-${Uuid.random().toHexString()}",
+                    items = items,
+                    revenue = 109.97f, // if not set, you can also provide orderRevenue via optional params
+                    subTotal = 99.97f,
+                    tax = 5.00f,
+                    shippingCost = 5.00f,
+                    discount = 0.0f,
                 )
                 delay(1.seconds)
                 tracker.dispatchBatch()
