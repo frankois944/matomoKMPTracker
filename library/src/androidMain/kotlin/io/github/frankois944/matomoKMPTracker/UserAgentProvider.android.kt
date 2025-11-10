@@ -2,6 +2,7 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import android.content.Context
 import android.os.Build
 import android.webkit.WebSettings
 import io.github.frankois944.matomoKMPTracker.context.ContextObject
@@ -33,6 +34,7 @@ internal actual object UserAgentProvider {
 
     actual fun getUserAgent(): String {
         val httpAgent: String? = getHttpAgent()
+        val context = ContextObject.context?.get()
         if (httpAgent == null || httpAgent.startsWith("Apache-HttpClient/UNAVAILABLE (java")) {
             val dalvik = getJVMVersion() ?: "0.0.0"
             val android = getRelease()
@@ -40,15 +42,50 @@ internal actual object UserAgentProvider {
             val build = getBuildId()
             return String.format(
                 Locale.US,
-                "Dalvik/%s (Linux; U; Android %s; %s Build/%s)",
+                "Dalvik/%s (Linux; U; Android %s; %s Build/%s) %s/%s",
                 dalvik,
                 android,
                 model,
                 build,
             )
         }
-        return httpAgent
+        return httpAgent.let {
+            String.format(
+                Locale.US,
+                "%s %s/%s",
+                it,
+                if (context != null) context.applicationInfo?.name else "Unknown-App",
+                if (context != null) "${context.versionName()}.${context.versionCode()}" else "Unknown-Version",
+            )
+        }
     }
+
+    internal fun Context.versionName(): String? =
+        if (Build.VERSION.SDK_INT >= 33) {
+            packageManager
+                .getPackageInfo(
+                    packageName,
+                    android.content.pm.PackageManager.PackageInfoFlags
+                        .of(0),
+                ).versionName
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).versionName
+        }
+
+    internal fun Context.versionCode(): String? =
+        if (Build.VERSION.SDK_INT >= 33) {
+            packageManager
+                .getPackageInfo(
+                    packageName,
+                    android.content.pm.PackageManager.PackageInfoFlags
+                        .of(0),
+                ).longVersionCode
+                .toString()
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).versionCode.toString()
+        }
 
     actual fun getClientHint(): String =
         (
