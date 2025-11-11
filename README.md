@@ -40,6 +40,17 @@ dependencies {
 
 Replace `<latest-version>` with the latest version published on Maven Central [![Maven Central Version](https://img.shields.io/maven-central/v/io.github.frankois944/matomoKMPTracker)](https://central.sonatype.com/artifact/io.github.frankois944/matomoKMPTracker).
 
+### Apple targets
+
+The Apple platform requires **sqlite** to be linked to your application
+
+### WASM / JS targets
+
+Some additional configuration need to be done, follow the [SQLDelight setup documentation](https://sqldelight.github.io/sqldelight/2.1.0/js_sqlite/multiplatform/)
+
+### Sample
+
+[A full sample is available](https://github.com/frankois944/matomoKMPTracker/tree/main/sample)
 
 ## Quick start
 
