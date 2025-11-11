@@ -39,11 +39,11 @@ fun App(context: NativeContext? = null) {
         ) {
             Button(onClick = {
                 showContent = !showContent
-                /*MatomoTracker.current.trackEventWithCategory(
+                MatomoTracker.current.trackEventWithCategory(
                     "Button",
                     action = "Click me!",
                     value = if (showContent) 1f else 0f
-                )*/
+                )
             }) {
                 Text("Click me!")
             }
