@@ -4,11 +4,14 @@ package io.github.frankois944.matomoKMPTracker
 
 import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
+import io.github.frankois944.matomoKMPTracker.dispatcher.Dispatcher
+import io.github.frankois944.matomoKMPTracker.queue.Queue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -40,32 +43,62 @@ class EventTestAndroid {
     @kotlin.test.Test
     fun testPageView() =
         runTest {
-            launch(Dispatchers.Default) {
+            launch(Dispatchers.IO) {
+                /*val queuedEvents = mutableListOf<Event>()
+
+                val queue: Queue =
+                    object : Queue {
+                        override suspend fun eventCount(): Long = 0
+
+                        override suspend fun enqueue(events: List<Event>) {
+                            queuedEvents.addAll(events)
+                        }
+
+                        override suspend fun first(limit: Long): List<Event> = queuedEvents.subList(0, limit.toInt())
+
+                        override suspend fun remove(events: List<Event>) {
+                            // no-op
+                        }
+
+                        override suspend fun removeAll() {
+                            // no-op
+                        }
+                    }*/
                 val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                        context = ApplicationProvider.getApplicationContext(),
-                    )
+                    Tracker
+                        .create(
+                            url = "https://matomo.spmforkmp.eu/matomo.php",
+                            siteId = siteId,
+                            context = ApplicationProvider.getApplicationContext(),
+                            //   customQueue = queue,
+                        ).also {
+                            it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
+                        }
                 val nbVisit = 3
                 for (i in 1..nbVisit) {
                     tracker.startNewSession()
-                    delay(50.milliseconds)
-                    println("Session send $i")
+                    delay(1.seconds)
                     tracker.trackView(listOf("index1"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                     tracker.trackView(listOf("index2"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                     tracker.trackView(listOf("index3"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                     tracker.trackView(listOf("index4"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                     tracker.trackView(listOf("index5"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                     tracker.trackView(listOf("index6"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                 }
-                delay(10.seconds)
+                /*queuedEvents.forEach {
+                    println("---")
+                    println("DATE = ${it.date}")
+                    println("isNewSession = ${it.isNewSession}")
+                    println("isPing = ${it.isPing}")
+                }
+                println("---")*/
+                delay(5.seconds)
             }
         }
 }

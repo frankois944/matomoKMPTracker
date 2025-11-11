@@ -41,16 +41,19 @@ class EventTest {
             if (isAndroid()) {
                 return@runTest
             }
-            launch(Dispatchers.Default) {
+            launch(Dispatchers.Unconfined) {
                 val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                    Tracker
+                        .create(
+                            url = "https://matomo.spmforkmp.eu/matomo.php",
+                            siteId = siteId,
+                        ).also {
+                            it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
+                        }
                 val nbVisit = 3
                 for (i in 1..nbVisit) {
                     tracker.startNewSession()
-                    delay(50.milliseconds)
+                    delay(10.milliseconds)
                     println("Session send $i")
                     tracker.trackView(listOf("index1"))
                     delay(50.milliseconds)
@@ -64,11 +67,8 @@ class EventTest {
                     delay(50.milliseconds)
                     tracker.trackView(listOf("index6"))
                     delay(50.milliseconds)
-                    tracker.dispatchBatch()
                 }
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                delay(5.seconds)
             }
         }
 

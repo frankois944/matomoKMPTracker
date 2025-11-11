@@ -14,14 +14,13 @@ import kotlin.uuid.Uuid
 
 @Serializable
 public class Event internal constructor(
-    internal val dateCreatedInSecond: Long = Clock.System.now().epochSeconds,
-    internal val dateCreatedOfNanoSecond: Int = Clock.System.now().nanosecondsOfSecond,
-    internal val uuid: String = Uuid.random().toHexString(),
-    internal val rand: Long = 0,
+    internal val dateCreatedInSecond: Long,
+    internal val dateCreatedOfNanoSecond: Long,
+    internal val uuid: String,
     public val siteId: Int,
     public var visitor: Visitor? = null,
     public val isCustomAction: Boolean,
-    public val date: Long = dateCreatedInSecond,
+    public val date: Long,
     public val url: String?,
     public val actionName: List<String>,
     public val language: String? = Device.create().language,
@@ -84,8 +83,15 @@ public class Event internal constructor(
         isCustomAction: Boolean,
         isPing: Boolean = false,
     ) : this(
+        dateCreatedInSecond = Clock.System.now().epochSeconds,
+        dateCreatedOfNanoSecond =
+            Clock.System
+                .now()
+                .nanosecondsOfSecond
+                .toLong(),
         siteId = tracker.siteId,
         isCustomAction = isCustomAction,
+        uuid = Uuid.random().toHexString(),
         url = url ?: (tracker.contentBase + action.joinToString("/")),
         actionName = action,
         referer = referer,
@@ -114,6 +120,7 @@ public class Event internal constructor(
         orderShippingCost = orderShippingCost,
         orderDiscount = orderDiscount,
         isPing = isPing,
+        date = Clock.System.now().epochSeconds,
     )
 
     internal val queryItems: Map<String, Any?>
@@ -125,7 +132,6 @@ public class Event internal constructor(
                     set("rec", "1")
                     set("_id", visitor?.id)
                     set("uid", visitor?.userId)
-                    set("url", url)
                     val localTime = Instant.fromEpochSeconds(date).toLocalDateTime(TimeZone.currentSystemDefault())
                     set("h", localTime.hour)
                     set("m", localTime.minute)
@@ -135,11 +141,14 @@ public class Event internal constructor(
                     if (isPing) {
                         set("ping", "1")
                     } else {
+                        set("url", url)
                         set("ca", if (isCustomAction) "1" else null)
                         set("action_name", actionName.joinToString("/"))
                         set("lang", language)
                         set("urlref", referer)
-                        set("new_visit", if (isNewSession) 1 else 0)
+                        if (isNewSession) {
+                            set("new_visit", 1)
+                        }
                         set("res", "${screenResolution.width}x${screenResolution.height}")
                         set("e_c", eventCategory)
                         set("e_a", eventAction)

@@ -54,7 +54,7 @@ public class Tracker private constructor(
      * Per default it is a `DefaultLogger` with a `minLevel` of `LogLevel.warning`.
      * You can set your own Logger with a custom `minLevel` or a complete custom logging mechanism.
      */
-    public var logger: MatomoTrackerLogger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
+    public var logger: MatomoTrackerLogger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Warning)
 
     init {
         require(url.endsWith("matomo.php")) {

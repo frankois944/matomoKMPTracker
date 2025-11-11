@@ -40,7 +40,6 @@ internal data class BulkRequest(
                                                 add("${item.key}=$value")
                                             }
                                         }
-                                    add("rand=${Uuid.random().toHexString()}")
                                 }.joinToString("&"),
                             )
                         }

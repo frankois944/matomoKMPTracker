@@ -30,7 +30,8 @@ internal class DatabaseQueue(
                     uuid = event.uuid,
                     scope = scope,
                     value_ = data,
-                    timestamp = "${event.dateCreatedInSecond}${event.dateCreatedOfNanoSecond}".toLong(),
+                    timestamp = event.dateCreatedInSecond,
+                    nanosecond = event.dateCreatedOfNanoSecond.toLong(),
                 )
             }
         }
