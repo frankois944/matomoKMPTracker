@@ -24,8 +24,8 @@ A lightweight, Kotlin Multiplatform (KMP) client tracker for [Matomo](https://ma
 
 ## Requirements
 
-- A running Matomo instance and a site configured with a `siteId`
-- The Matomo tracking endpoint URL that ends with `matomo.php`, e.g. `https://your.matomo.tld/matomo.php`
+- At leasr Kotlin 2.2.0 
+- A running Matomo instance (cloud/self-hosted) and a site configured with a `siteId`
 
 ## Installation
 
