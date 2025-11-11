@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "io.github.frankois944"
-version = "0.1.1"
+version = "0.2.0"
 
 kotlin {
     explicitApi()
@@ -135,7 +135,7 @@ android {
 }
 
 mavenPublishing {
-    publishToMavenCentral()
+    publishToMavenCentral(true)
 
     signAllPublications()
 
