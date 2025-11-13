@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "matomo-kmp-tracker"
-include(":library")
+include(":MatomoKMPTracker")

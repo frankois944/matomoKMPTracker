@@ -1,6 +1,8 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+import java.util.Locale
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -11,9 +13,11 @@ plugins {
 }
 
 group = "io.github.frankois944"
+val productName = "matomoKMPTracker"
 version = "0.2.0"
 
 kotlin {
+
     explicitApi()
     jvm("desktop")
     androidTarget {
@@ -22,21 +26,35 @@ kotlin {
         }
         publishLibraryVariants("release", "debug")
     }
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-    tvosX64()
-    tvosArm64()
-    tvosSimulatorArm64()
-    macosX64()
-    macosArm64()
-    watchosX64()
-    watchosArm64()
-    watchosSimulatorArm64()
+
+    val xcf = XCFramework()
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64(),
+        tvosX64(),
+        tvosArm64(),
+        tvosSimulatorArm64(),
+        macosX64(),
+        macosArm64(),
+        watchosX64(),
+        watchosArm64(),
+        watchosSimulatorArm64(),
+    ).forEach {
+        it.binaries.framework {
+            baseName =
+                productName.replaceFirstChar { name ->
+                    if (name.isLowerCase()) name.titlecase(Locale.getDefault()) else name.toString()
+                }
+            xcf.add(this)
+            binaryOption("bundleId", "${group}${productName.lowercase()}")
+            binaryOption("bundleVersion", version.toString())
+        }
+    }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        outputModuleName = "matomoKMPTracker"
+        outputModuleName = productName
         browser {
             testTask {
                 useKarma {
@@ -117,7 +135,7 @@ kotlin {
 }
 
 android {
-    namespace = "io.github.frankois944.matomoKMPTracker"
+    namespace = "$group.$productName"
     compileSdk =
         libs.versions.android.compileSdk
             .get()
@@ -141,7 +159,7 @@ mavenPublishing {
 
     coordinates(
         group.toString(),
-        "matomoKMPTracker",
+        productName,
         version.toString(),
     )
 
