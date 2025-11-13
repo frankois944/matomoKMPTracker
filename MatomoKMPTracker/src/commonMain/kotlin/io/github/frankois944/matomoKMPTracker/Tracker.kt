@@ -3,12 +3,11 @@
 package io.github.frankois944.matomoKMPTracker
 
 import io.github.frankois944.matomoKMPTracker.context.storeContext
-import io.github.frankois944.matomoKMPTracker.database.DriverFactory
-import io.github.frankois944.matomoKMPTracker.database.createDatabase
+import io.github.frankois944.matomoKMPTracker.database.factory.DriverFactory
+import io.github.frankois944.matomoKMPTracker.database.factory.createDatabase
 import io.github.frankois944.matomoKMPTracker.dispatcher.Dispatcher
 import io.github.frankois944.matomoKMPTracker.dispatcher.HttpClientDispatcher
 import io.github.frankois944.matomoKMPTracker.preferences.UserPreferences
-import io.github.frankois944.matomoKMPTracker.queue.DatabaseQueue
 import io.github.frankois944.matomoKMPTracker.queue.Queue
 import io.github.frankois944.matomoKMPTracker.queue.enqueue
 import io.github.frankois944.matomoKMPTracker.utils.ConcurrentMutableList

@@ -1,11 +1,12 @@
 @file:OptIn(ExperimentalUuidApi::class, ExperimentalSerializationApi::class)
 
-package io.github.frankois944.matomoKMPTracker.queue
+package io.github.frankois944.matomoKMPTracker.database.queue
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.github.frankois944.matomoKMPTracker.CacheDatabase
 import io.github.frankois944.matomoKMPTracker.Event
+import io.github.frankois944.matomoKMPTracker.schema.CacheDatabase
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -14,9 +15,9 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlin.uuid.ExperimentalUuidApi
 
-internal class DatabaseQueue(
-    val database: CacheDatabase,
-    val scope: String,
+public class DatabaseQueue(
+    public val database: CacheDatabase,
+    public val scope: String,
 ) : Queue {
     private val mutex = Mutex()
 

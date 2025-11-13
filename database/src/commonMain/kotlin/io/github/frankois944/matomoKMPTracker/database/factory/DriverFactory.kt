@@ -1,15 +1,15 @@
 @file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 
-package io.github.frankois944.matomoKMPTracker.database
+package io.github.frankois944.matomoKMPTracker.database.factory
 
 import app.cash.sqldelight.db.SqlDriver
-import io.github.frankois944.matomoKMPTracker.CacheDatabase
+import io.github.frankois944.matomoKMPTracker.schema.CacheDatabase
 
-internal expect class DriverFactory() {
-    suspend fun createDriver(dbName: String): SqlDriver
+public expect class DriverFactory() {
+    public suspend fun createDriver(dbName: String): SqlDriver
 }
 
-internal suspend fun createDatabase(
+public suspend fun createDatabase(
     driverFactory: DriverFactory,
     dbName: String,
 ): CacheDatabase {
