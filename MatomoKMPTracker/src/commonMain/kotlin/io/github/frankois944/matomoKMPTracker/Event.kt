@@ -9,6 +9,8 @@ import io.github.frankois944.matomoKMPTracker.core.Visitor
 import io.ktor.http.encodeURLParameter
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.EmptySerializersModule
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -85,7 +87,7 @@ public fun Event.Companion.create(
         orderShippingCost = orderShippingCost,
         orderDiscount = orderDiscount,
         isPing = isPing,
-        date = Clock.System.now().epochSeconds,
+        date = Clock.System.now().toEpochMilliseconds(),
         visitor = visitor,
         language = Device.create().language,
         isNewSession = isNewSession,
@@ -94,6 +96,7 @@ public fun Event.Companion.create(
 
 internal val Event.queryItems: Map<String, Any?>
     get() {
+        val currentInstant = Instant.fromEpochMilliseconds(date)
         val items =
             buildMap<String, Any?> {
                 set("idsite", siteId)
@@ -101,17 +104,18 @@ internal val Event.queryItems: Map<String, Any?>
                 set("rec", "1")
                 set("_id", visitor?.id)
                 set("uid", visitor?.userId)
-                val localTime = Instant.fromEpochSeconds(date).toLocalDateTime(TimeZone.currentSystemDefault())
+                set("cdt", currentInstant.toString())
+                val localTime = currentInstant.toLocalDateTime(TimeZone.currentSystemDefault())
                 set("h", localTime.hour)
                 set("m", localTime.minute)
                 set("s", localTime.second)
+                set("send_image", 0)
                 // set("uadata", UserAgentProvider.getClientHint().encodeURLParameter(false))
-                set("cdt", date)
                 if (isPing) {
                     set("ping", "1")
                 } else {
                     set("url", url)
-                    set("ca", if (isCustomAction) "1" else null)
+                    //   set("ca", if (isCustomAction) "1" else null)
                     set("action_name", actionName.joinToString("/"))
                     set("lang", language)
                     set("urlref", referer)
@@ -160,9 +164,17 @@ internal val Event.queryItems: Map<String, Any?>
     }
 
 private fun Event.orderItemParameterValue(): String {
-    val items = mutableListOf<String>()
+    val items = mutableListOf<List<String>>()
     orderItems.forEach {
-        items.add("[\"${it.sku}\",\"${it.name}\",\"${it.category}\",${it.price},${it.quantity}]")
+        val newItem =
+            buildList {
+                add(it.sku)
+                add(it.name)
+                add(it.category)
+                add(it.price.toString())
+                add(it.quantity.toString())
+            }
+        items.add(newItem)
     }
-    return "[${items.joinToString(",")}]".encodeURLParameter(false)
+    return Json.encodeToString(items)
 }

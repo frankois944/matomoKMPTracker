@@ -47,7 +47,7 @@ public class DatabaseQueue(
                 }
         }
 
-    override suspend fun remove(events: List<Event>): Unit =
+    override suspend fun remove(events: List<Event>) {
         mutex.withLock {
             database.trackingCacheQueries
                 .deleteUuids(
@@ -58,12 +58,14 @@ public class DatabaseQueue(
                     scope = scope,
                 )
         }
+    }
 
-    override suspend fun removeAll(): Unit =
+    override suspend fun removeAll() {
         mutex.withLock {
             database.trackingCacheQueries
                 .deleteAll(
                     scope = scope,
                 )
         }
+    }
 }

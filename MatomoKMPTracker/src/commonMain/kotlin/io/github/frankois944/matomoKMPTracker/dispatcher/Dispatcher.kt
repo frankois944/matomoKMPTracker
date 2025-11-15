@@ -7,9 +7,9 @@ public interface Dispatcher {
 
     public val userAgent: String?
 
-    @Throws(Throwable::class)
-    public suspend fun sendPing(event: Event)
+    @Throws(Throwable::class, IllegalArgumentException::class)
+    public suspend fun sendBulkEvent(events: List<Event>)
 
     @Throws(Throwable::class, IllegalArgumentException::class)
-    public suspend fun send(events: List<Event>)
+    public suspend fun sendSingleEvent(event: Event)
 }

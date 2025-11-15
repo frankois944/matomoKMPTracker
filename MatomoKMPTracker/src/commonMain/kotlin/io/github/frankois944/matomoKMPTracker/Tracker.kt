@@ -20,6 +20,10 @@ import io.github.frankois944.matomoKMPTracker.utils.startTimer
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -118,44 +122,47 @@ public class Tracker private constructor(
         coroutine.launch(Dispatchers.Default) {
             logger.log("Start Dispatchers timer", LogLevel.Debug)
             startTimer(dispatchInterval) {
-                logger.log("Start checking for new event", LogLevel.Info)
-                if (isDispatching) {
-                    logger.log("Already dispatching events", LogLevel.Verbose)
-                    return@startTimer
-                }
-                if (queue?.eventCount() == 0L) {
-                    logger.log("No events to dispatch", LogLevel.Verbose)
-                    return@startTimer
-                }
-                isDispatching = true
-                logger.log("Start dispatching events", LogLevel.Info)
-                while (dispatchBatch()) {
+                mutex.withLock {
+                    logger.log("Start checking for new event", LogLevel.Info)
+                    if (isDispatching) {
+                        logger.log("Already dispatching events", LogLevel.Verbose)
+                        return@startTimer
+                    }
+                    if (queue?.eventCount() == 0L) {
+                        logger.log("No events to dispatch", LogLevel.Verbose)
+                        return@startTimer
+                    }
+                    isDispatching = true
+                    logger.log("Start dispatching events", LogLevel.Info)
+                    dispatchBatch()
                     logger.log("Events dispatched", LogLevel.Info)
+                    isDispatching = false
                 }
-                isDispatching = false
             }
         }
     }
 
-    internal suspend fun dispatchBatch(): Boolean {
+    internal suspend fun dispatchBatch() {
         logger.log("Start Dispatch events", LogLevel.Debug)
         val items = queue?.first(numberOfEventsDispatchedAtOnce)
         if (items == null || items.isEmpty()) {
             logger.log("No events to dispatch", LogLevel.Verbose)
-            return false
+        } else {
+            items.forEach { item ->
+                logger.log("Sending event ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                try {
+                    dispatcher.sendSingleEvent(item)
+                    logger.log("remove events ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                    queue?.remove(listOf(item))
+                } catch (e: IllegalArgumentException) {
+                    logger.log("remove events ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                    queue?.remove(listOf(item))
+                    logger.log("Invalid request data, remove from cache: $e", LogLevel.Error)
+                } catch (e: Exception) {
+                    logger.log("Error while dispatching events: $e", LogLevel.Error)
+                }
+            }
         }
-        logger.log("Found ${items.size} events", LogLevel.Debug)
-        try {
-            dispatcher.send(items)
-            queue?.remove(items)
-            return true
-        } catch (e: IllegalArgumentException) {
-            queue?.remove(items)
-            logger.log("Invalid request data, remove from cache: $e", LogLevel.Error)
-        } catch (e: Exception) {
-            logger.log("Error while dispatching events: $e", LogLevel.Error)
-        }
-        return false
     }
 
     public companion object {
@@ -198,21 +205,14 @@ public class Tracker private constructor(
     internal fun queue(
         event: Event,
         nextEventStartsANewSession: Boolean,
-        isHeartBeat: Boolean = false,
     ) {
         coroutine.launch(Dispatchers.Default) {
             userPreferences?.let { userPreferences ->
                 if (isOptedOut()) return@launch
                 event.visitor = Visitor.current(userPreferences)
-                if (isHeartBeat) {
-                    dispatcher.sendPing(event)
-                } else {
-                    event.isNewSession = nextEventStartsANewSession
-                    this@Tracker.mutex.withLock {
-                        logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
-                        this@Tracker.queue?.enqueue(event)
-                    }
-                }
+                event.isNewSession = nextEventStartsANewSession
+                logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
+                this@Tracker.queue?.enqueue(event)
             }
         }
     }
@@ -345,7 +345,7 @@ public class Tracker private constructor(
         )
     }
 
-    // <editor-fold desc="Track actions">
+// <editor-fold desc="Track actions">
 
     /**
      * Tracks a screenview.
@@ -489,9 +489,9 @@ public class Tracker private constructor(
             ),
         )
     }
-    // </editor-fold>
+// </editor-fold>
 
-    // <editor-fold desc="Dimension">
+// <editor-fold desc="Dimension">
 
     /**
      * Set a permanent custom dimension by value and index.
@@ -521,7 +521,7 @@ public class Tracker private constructor(
             }
         }
     }
-    // </editor-fold>
+// </editor-fold>
 
     /**
      * Starts a new Session
