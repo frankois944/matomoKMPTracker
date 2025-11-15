@@ -2,6 +2,7 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.Size
 import oshi.SystemInfo
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment

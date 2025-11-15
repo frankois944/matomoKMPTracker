@@ -4,8 +4,8 @@ package io.github.frankois944.matomoKMPTracker.database.queue
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
-import io.github.frankois944.matomoKMPTracker.CacheDatabase
-import io.github.frankois944.matomoKMPTracker.Event
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.core.queue.Queue
 import io.github.frankois944.matomoKMPTracker.schema.CacheDatabase
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,7 +23,7 @@ public class DatabaseQueue(
 
     override suspend fun eventCount(): Long = database.trackingCacheQueries.count(scope).awaitAsOne()
 
-    override suspend fun enqueue(events: List<Event>) =
+    override suspend fun enqueue(events: List<Event>): Unit =
         mutex.withLock {
             events.forEach { event ->
                 val data = Cbor.encodeToByteArray(event)
@@ -32,7 +32,7 @@ public class DatabaseQueue(
                     scope = scope,
                     value_ = data,
                     timestamp = event.dateCreatedInSecond,
-                    nanosecond = event.dateCreatedOfNanoSecond.toLong(),
+                    nanosecond = event.dateCreatedOfNanoSecond,
                 )
             }
         }
@@ -47,7 +47,7 @@ public class DatabaseQueue(
                 }
         }
 
-    override suspend fun remove(events: List<Event>) =
+    override suspend fun remove(events: List<Event>): Unit =
         mutex.withLock {
             database.trackingCacheQueries
                 .deleteUuids(
@@ -57,15 +57,13 @@ public class DatabaseQueue(
                         },
                     scope = scope,
                 )
-            Unit
         }
 
-    override suspend fun removeAll() =
+    override suspend fun removeAll(): Unit =
         mutex.withLock {
             database.trackingCacheQueries
                 .deleteAll(
                     scope = scope,
                 )
-            Unit
         }
 }

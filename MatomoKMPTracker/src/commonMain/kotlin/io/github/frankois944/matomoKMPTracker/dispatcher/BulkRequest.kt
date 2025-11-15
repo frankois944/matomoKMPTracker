@@ -2,11 +2,11 @@
 
 package io.github.frankois944.matomoKMPTracker.dispatcher
 
-import io.github.frankois944.matomoKMPTracker.Event
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.queryItems
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Serializable
 internal data class BulkRequest(

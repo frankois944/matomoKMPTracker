@@ -1,4 +1,4 @@
-package io.github.frankois944.matomoKMPTracker.dispatcher
+package io.github.frankois944.matomoKMPTracker.core.dispatcher
 
 import io.github.frankois944.matomoKMPTracker.core.Event
 

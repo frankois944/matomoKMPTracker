@@ -1,5 +1,6 @@
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.Event
 import io.github.frankois944.matomoKMPTracker.utils.startTimer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,7 +23,7 @@ internal class HeartBeat(
                     tracker.logger.log("Sending heartbeat event", LogLevel.Info)
                     tracker.queue(
                         event =
-                            Event(
+                            Event.create(
                                 tracker = tracker,
                                 isCustomAction = false,
                                 isPing = true,

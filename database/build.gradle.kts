@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.datetime)
+            implementation(project(":core"))
         }
         appleMain.dependencies {
             implementation(libs.native.driver)

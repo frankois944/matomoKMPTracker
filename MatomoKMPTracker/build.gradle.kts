@@ -48,6 +48,8 @@ kotlin {
             xcf.add(this)
             binaryOption("bundleId", "${group}${productName.lowercase()}")
             binaryOption("bundleVersion", version.toString())
+            export(project(":core"))
+            linkerOpts("-lsqlite3")
         }
     }
 
@@ -86,6 +88,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(project(":database"))
+            api(project(":core"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -107,7 +110,6 @@ kotlin {
             dependencies {
                 implementation(libs.ktor.client.java)
                 implementation(libs.oshi.core)
-                // implementation(libs.okio)
             }
         }
         wasmJsMain.dependencies {

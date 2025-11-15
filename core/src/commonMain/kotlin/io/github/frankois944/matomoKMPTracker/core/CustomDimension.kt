@@ -1,4 +1,4 @@
-package io.github.frankois944.matomoKMPTracker
+package io.github.frankois944.matomoKMPTracker.core
 
 import kotlinx.serialization.Serializable
 

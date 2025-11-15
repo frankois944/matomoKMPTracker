@@ -2,16 +2,12 @@
 
 package io.github.frankois944.matomoKMPTracker
 
-import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
-import io.github.frankois944.matomoKMPTracker.dispatcher.Dispatcher
-import io.github.frankois944.matomoKMPTracker.queue.Queue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -19,7 +15,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 actual fun isAndroid(): Boolean = true

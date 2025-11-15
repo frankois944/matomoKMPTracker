@@ -1,6 +1,6 @@
-package io.github.frankois944.matomoKMPTracker.queue
+package io.github.frankois944.matomoKMPTracker.core.queue
 
-import io.github.frankois944.matomoKMPTracker.Event
+import io.github.frankois944.matomoKMPTracker.core.Event
 
 public interface Queue {
     public suspend fun eventCount(): Long

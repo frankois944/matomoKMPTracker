@@ -3,23 +3,30 @@
 package io.github.frankois944.matomoKMPTracker
 
 import io.github.frankois944.matomoKMPTracker.context.storeContext
+import io.github.frankois944.matomoKMPTracker.core.CustomDimension
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.core.OrderItem
+import io.github.frankois944.matomoKMPTracker.core.Visitor
+import io.github.frankois944.matomoKMPTracker.core.queue.Queue
+import io.github.frankois944.matomoKMPTracker.core.queue.enqueue
 import io.github.frankois944.matomoKMPTracker.database.factory.DriverFactory
 import io.github.frankois944.matomoKMPTracker.database.factory.createDatabase
+import io.github.frankois944.matomoKMPTracker.database.queue.DatabaseQueue
 import io.github.frankois944.matomoKMPTracker.dispatcher.Dispatcher
 import io.github.frankois944.matomoKMPTracker.dispatcher.HttpClientDispatcher
 import io.github.frankois944.matomoKMPTracker.preferences.UserPreferences
-import io.github.frankois944.matomoKMPTracker.queue.Queue
-import io.github.frankois944.matomoKMPTracker.queue.enqueue
 import io.github.frankois944.matomoKMPTracker.utils.ConcurrentMutableList
 import io.github.frankois944.matomoKMPTracker.utils.startTimer
-import io.ktor.http.*
-import kotlinx.coroutines.*
+import io.ktor.http.Url
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-
-public expect abstract class NativeContext
 
 public class Tracker private constructor(
     internal val url: String,
@@ -29,7 +36,7 @@ public class Tracker private constructor(
     internal val customUserAgent: String? = null,
     internal val customQueue: Queue? = null,
     internal val customActionHostUrl: String? = null,
-    context: NativeContext?,
+    context: Any?,
 ) {
     internal var queue: Queue? = null
     internal var userPreferences: UserPreferences? = null
@@ -108,7 +115,7 @@ public class Tracker private constructor(
     }
 
     internal fun startDispatchEvents() {
-        coroutine.launch(Dispatchers.Unconfined) {
+        coroutine.launch(Dispatchers.Default) {
             logger.log("Start Dispatchers timer", LogLevel.Debug)
             startTimer(dispatchInterval) {
                 logger.log("Start checking for new event", LogLevel.Info)
@@ -160,7 +167,7 @@ public class Tracker private constructor(
          * - On Apple and Android targets, by default, it's the applicationId/packageName.
          * - On the wasm target, by default, it's the current hostname of the browser.
          * - On Desktop, by default, it's null, but it's RECOMMENDED to set a value by yourself.
-         * @param context (MANDATORY for Android target) An Android Context for content retrieval
+         * @param context (MANDATORY for Android target) A valid Android Context for content retrieval
          * @param customUserAgent Set a custom userAgent for every request
          * @param customDispatcher
          * @param customQueue
@@ -171,7 +178,7 @@ public class Tracker private constructor(
             siteId: Int,
             tokenAuth: String? = null,
             customActionHostUrl: String? = null,
-            context: NativeContext? = null,
+            context: Any? = null,
             customUserAgent: String? = null,
             customDispatcher: Dispatcher? = null,
             customQueue: Queue? = null,
@@ -302,7 +309,7 @@ public class Tracker private constructor(
         target: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 contentName = name,
                 contentPiece = piece,
@@ -327,7 +334,7 @@ public class Tracker private constructor(
         target: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 contentInteraction = interaction,
                 contentName = name,
@@ -355,7 +362,7 @@ public class Tracker private constructor(
         dimensions: List<CustomDimension> = emptyList(),
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = view,
                 url = url,
@@ -384,7 +391,7 @@ public class Tracker private constructor(
         url: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = listOf(action),
                 url = url,
@@ -409,7 +416,7 @@ public class Tracker private constructor(
         revenue: Float,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 goalId = goalId,
                 revenue = revenue,
@@ -439,7 +446,7 @@ public class Tracker private constructor(
         discount: Float? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this@Tracker,
                 orderId = id,
                 orderItems = items,
@@ -470,7 +477,7 @@ public class Tracker private constructor(
         url: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = emptyList(),
                 url = url,

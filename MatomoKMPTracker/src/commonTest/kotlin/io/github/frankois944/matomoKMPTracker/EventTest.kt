@@ -2,6 +2,7 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.OrderItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay

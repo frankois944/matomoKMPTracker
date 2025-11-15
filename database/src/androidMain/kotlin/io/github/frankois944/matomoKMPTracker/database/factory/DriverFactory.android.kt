@@ -5,11 +5,12 @@ package io.github.frankois944.matomoKMPTracker.database.factory
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import io.github.frankois944.matomoKMPTracker.context.ContextObject
 import io.github.frankois944.matomoKMPTracker.schema.CacheDatabase
 
 public actual class DriverFactory {
     public actual suspend fun createDriver(dbName: String): SqlDriver {
-        val context = context?.get()
+        val context = ContextObject.context?.get()
         requireNotNull(context) {
             "Context can't be null"
         }
