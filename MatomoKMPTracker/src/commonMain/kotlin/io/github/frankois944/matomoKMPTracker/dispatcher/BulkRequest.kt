@@ -6,7 +6,6 @@ import io.github.frankois944.matomoKMPTracker.core.Event
 import io.github.frankois944.matomoKMPTracker.queryItems
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable

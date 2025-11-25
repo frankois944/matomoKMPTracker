@@ -3,12 +3,9 @@
 package io.github.frankois944.matomoKMPTracker
 
 import androidx.test.core.app.ApplicationProvider
-import io.github.frankois944.matomoKMPTracker.context.ContextObject
 import io.github.frankois944.matomoKMPTracker.context.storeContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain

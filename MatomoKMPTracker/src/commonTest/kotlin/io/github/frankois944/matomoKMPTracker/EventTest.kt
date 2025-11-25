@@ -2,7 +2,6 @@
 
 package io.github.frankois944.matomoKMPTracker
 
-import io.github.frankois944.matomoKMPTracker.core.Event
 import io.github.frankois944.matomoKMPTracker.core.OrderItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,7 +15,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi

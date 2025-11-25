@@ -2,8 +2,6 @@
 
 package io.github.frankois944.matomoKMPTracker
 
-import io.ktor.http.encodeURLParameter
-
 internal actual object UserAgentProvider {
     actual fun getUserAgent(): String {
         val device = Device.create()

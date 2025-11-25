@@ -3,7 +3,6 @@
 
 package io.github.frankois944.matomoKMPTracker
 
-import io.ktor.http.encodeURLParameter
 import kotlinx.cinterop.ExperimentalForeignApi
 
 internal actual object UserAgentProvider {
