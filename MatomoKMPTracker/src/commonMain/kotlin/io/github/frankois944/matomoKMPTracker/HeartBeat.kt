@@ -1,9 +1,11 @@
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.Event
 import io.github.frankois944.matomoKMPTracker.utils.startTimer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 internal class HeartBeat(
     private val tracker: Tracker,
@@ -18,17 +20,20 @@ internal class HeartBeat(
         tracker.logger.log("Starting heartbeat", LogLevel.Info)
         job =
             tracker.coroutine.launch(Dispatchers.Unconfined) {
-                startTimer(tracker.dispatchInterval) {
+                startTimer(10.seconds) {
                     tracker.logger.log("Sending heartbeat event", LogLevel.Info)
-                    tracker.queue(
-                        event =
-                            Event(
-                                tracker = tracker,
-                                isCustomAction = false,
-                                isPing = true,
-                            ),
-                        nextEventStartsANewSession = false,
-                    )
+                    try {
+                        tracker.dispatcher.sendSingleEvent(
+                            event =
+                                Event.create(
+                                    tracker = tracker,
+                                    isCustomAction = false,
+                                    isPing = true,
+                                ),
+                        )
+                    } catch (ex: Exception) {
+                        tracker.logger.log("Sending heartbeat failed, $ex", LogLevel.Warning)
+                    }
                 }
             }
     }

@@ -2,6 +2,8 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.Size
+
 internal expect class Device {
     val model: String
 

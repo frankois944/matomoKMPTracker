@@ -2,6 +2,8 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.core.OrderItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -13,6 +15,8 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
@@ -24,6 +28,41 @@ expect fun isAndroid(): Boolean
 class EventTest {
     private val mainThreadSurrogate = StandardTestDispatcher()
     private val siteId = 6
+
+    suspend fun getTracker(): Tracker =
+        Tracker
+            .create(
+                url = "https://matomo.spmforkmp.eu/matomo.php",
+                siteId = siteId,
+            ).also {
+                it.setIsHeartBeat(false)
+                it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
+                it.dispatchBatch()
+                it.queue!!.removeAll()
+                assertEquals(
+                    emptyList(),
+                    it.queue!!.first(10),
+                    "Must remain 0 event on start",
+                )
+            }
+
+    suspend fun waitAllEventSent(tracker: Tracker) {
+        val maxSeconds = 20
+        var currentSecond = 0
+        delay(1.seconds)
+        while (tracker.queue!!.first(10).isNotEmpty()) {
+            delay(1.seconds)
+            val currentEvent = tracker.queue!!.first(10)
+            if (currentSecond > maxSeconds && currentEvent.isNotEmpty()) {
+                assertEquals(
+                    emptyList(),
+                    currentEvent,
+                    "The queue is not empty after $maxSeconds seconds",
+                )
+            }
+            currentSecond++
+        }
+    }
 
     @BeforeTest
     fun setUp() {
@@ -42,18 +81,10 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Unconfined) {
-                val tracker =
-                    Tracker
-                        .create(
-                            url = "https://matomo.spmforkmp.eu/matomo.php",
-                            siteId = siteId,
-                        ).also {
-                            it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
-                        }
+                val tracker = getTracker()
                 val nbVisit = 3
                 for (i in 1..nbVisit) {
                     tracker.startNewSession()
-                    delay(10.milliseconds)
                     println("Session send $i")
                     tracker.trackView(listOf("index1"))
                     delay(50.milliseconds)
@@ -66,9 +97,9 @@ class EventTest {
                     tracker.trackView(listOf("index5"))
                     delay(50.milliseconds)
                     tracker.trackView(listOf("index6"))
-                    delay(50.milliseconds)
+                    delay(1.seconds)
                 }
-                delay(5.seconds)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -79,15 +110,9 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
-                tracker.trackGoal(goalId = 1, revenue = 42.0f)
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                val tracker = getTracker()
+                tracker.trackGoal(goalId = 1, revenue = 42.0)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -98,17 +123,13 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
-                tracker.trackSearch(query = "Test Unit")
-                tracker.trackSearch(query = "Test Unit2", category = "Search Unit Test")
-                tracker.trackSearch(query = "Test Unit2", category = "Search Unit Test", resultCount = 10)
+                val tracker = getTracker()
+                tracker.trackSearch(query = "Test Unit Search 1")
                 delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                tracker.trackSearch(query = "Test Unit Search 2", category = "Search Unit Test")
+                delay(1.seconds)
+                tracker.trackSearch(query = "Test Unit Search 3", category = "Search Unit Test", resultCount = 10)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -119,16 +140,10 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                val tracker = getTracker()
                 tracker.trackCampaign(name = "Test-Unit-kmp", keyword = "kmp")
                 tracker.trackView(listOf("url_test_unit"))
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -139,20 +154,14 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                val tracker = getTracker()
                 tracker.trackContentInteraction(
-                    name = "Test Unut interact1",
+                    name = "Test Unit interact1",
                     interaction = "SendSimpleAction",
                     piece = "extra",
                     target = "Backend",
                 )
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -163,19 +172,13 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                val tracker = getTracker()
                 tracker.trackContentImpression(
                     name = "Test Unit Impression",
                     piece = "extra print",
                     target = "Backend print",
                 )
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -186,40 +189,34 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                val tracker = getTracker()
                 val items =
                     listOf(
                         OrderItem(
                             sku = "SKU-001",
                             name = "Running Shoes",
                             category = "Shoes",
-                            price = 89.99f,
+                            price = 89.99,
                             quantity = 1,
                         ),
                         OrderItem(
                             sku = "SKU-002",
                             name = "Socks",
                             category = "Accessories",
-                            price = 9.99f,
+                            price = 9.99,
                             quantity = 2,
                         ),
                     )
                 tracker.trackOrder(
                     id = "ORDER-${Uuid.random().toHexString()}",
                     items = items,
-                    revenue = 109.97f, // if not set, you can also provide orderRevenue via optional params
-                    subTotal = 99.97f,
-                    tax = 5.00f,
-                    shippingCost = 5.00f,
-                    discount = 0.0f,
+                    revenue = 109.97, // if not set, you can also provide orderRevenue via optional params
+                    subTotal = 99.97,
+                    tax = 5.00,
+                    shippingCost = 5.00,
+                    discount = 0.0,
                 )
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                waitAllEventSent(tracker)
             }
         }
 
@@ -230,20 +227,14 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker =
-                    Tracker.create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                    )
+                val tracker = getTracker()
                 tracker.trackEventWithCategory(
                     category = "event cat1",
                     action = "event action1",
                     name = "event name1",
-                    value = 1.0f,
+                    value = 1.0,
                 )
-                delay(1.seconds)
-                tracker.dispatchBatch()
-                delay(2.seconds)
+                waitAllEventSent(tracker)
             }
         }
 }

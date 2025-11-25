@@ -1,17 +1,26 @@
 package io.github.frankois944.matomoKMPTracker.dispatcher
 
-import io.github.frankois944.matomoKMPTracker.Event
 import io.github.frankois944.matomoKMPTracker.UserAgentProvider
-import io.ktor.client.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.compression.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.io.IOException
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.queryItems
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.UserAgent
+import io.ktor.client.plugins.compression.ContentEncoding
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -40,7 +49,7 @@ internal class HttpClientDispatcher(
                 agent = userAgent ?: UserAgentProvider.getUserAgent()
             }
             install(HttpTimeout) {
-                requestTimeoutMillis = 60.seconds.inWholeMilliseconds
+                requestTimeoutMillis = 10.seconds.inWholeMilliseconds
             }
             install(Logging) {
                 logger =
@@ -51,18 +60,6 @@ internal class HttpClientDispatcher(
                     }
                 level = io.ktor.client.plugins.logging.LogLevel.ALL
             }
-            install(HttpRequestRetry) {
-                maxRetries = 3
-                retryIf { _, response ->
-                    !response.status.isSuccess()
-                }
-                retryOnExceptionIf { _, cause ->
-                    cause is IOException
-                }
-                delayMillis { retry ->
-                    retry * 1000L
-                }
-            }
         }
 
     val hearthBeatClient: HttpClient =
@@ -70,37 +67,42 @@ internal class HttpClientDispatcher(
             install(HttpTimeout) {
                 requestTimeoutMillis = 500.milliseconds.inWholeMilliseconds
             }
-            install(HttpRequestRetry) {
-                maxRetries = 0
-            }
         }
-
-    override suspend fun sendPing(event: Event) {
-        if (event.isPing) {
-            val result =
-                hearthBeatClient.post {
-                    setBody(BulkRequest.create(listOf(event), tokenAuth))
-                }
-            if (!result.status.isSuccess()) {
-                throw Throwable("Send ping event failed with status code: ${result.status.value}")
-            }
-        }
-    }
 
     @Throws(Throwable::class, IllegalArgumentException::class)
-    override suspend fun send(events: List<Event>) {
-        val result =
-            client.post {
+    override suspend fun sendBulkEvent(events: List<Event>) {
+        client
+            .post {
                 setBody(BulkRequest.create(events, tokenAuth))
-            }
-        if (!result.status.isSuccess()) {
+            }.handleResponse()
+    }
+
+    override suspend fun sendSingleEvent(event: Event) {
+        val client = if (event.isPing) hearthBeatClient else client
+        client
+            .get {
+                url {
+                    event.queryItems.forEach { query ->
+                        query.value?.let { value ->
+                            parameters.append(query.key, value.toString())
+                        }
+                        tokenAuth?.let {
+                            parameters.append("token_auth", tokenAuth)
+                        }
+                    }
+                }
+            }.handleResponse()
+    }
+
+    private suspend fun HttpResponse.handleResponse() {
+        if (!this.status.isSuccess()) {
             val message =
                 """
-                Send events failed with status 
-                code: ${result.status.value}
-                body: ${result.bodyAsText()}
+Send event failed with status 
+code: ${this.status.value}
+body: ${this.bodyAsText()}
                 """.trimIndent()
-            if (result.status.value == 500) {
+            if (this.status.value >= 400) {
                 throw IllegalArgumentException(
                     message,
                 )

@@ -3,24 +3,34 @@
 package io.github.frankois944.matomoKMPTracker
 
 import io.github.frankois944.matomoKMPTracker.context.storeContext
-import io.github.frankois944.matomoKMPTracker.database.DriverFactory
-import io.github.frankois944.matomoKMPTracker.database.createDatabase
+import io.github.frankois944.matomoKMPTracker.core.CustomDimension
+import io.github.frankois944.matomoKMPTracker.core.Event
+import io.github.frankois944.matomoKMPTracker.core.OrderItem
+import io.github.frankois944.matomoKMPTracker.core.Visitor
+import io.github.frankois944.matomoKMPTracker.core.queue.Queue
+import io.github.frankois944.matomoKMPTracker.core.queue.enqueue
+import io.github.frankois944.matomoKMPTracker.database.factory.DriverFactory
+import io.github.frankois944.matomoKMPTracker.database.factory.createDatabase
+import io.github.frankois944.matomoKMPTracker.database.queue.DatabaseQueue
 import io.github.frankois944.matomoKMPTracker.dispatcher.Dispatcher
 import io.github.frankois944.matomoKMPTracker.dispatcher.HttpClientDispatcher
 import io.github.frankois944.matomoKMPTracker.preferences.UserPreferences
-import io.github.frankois944.matomoKMPTracker.queue.DatabaseQueue
-import io.github.frankois944.matomoKMPTracker.queue.Queue
-import io.github.frankois944.matomoKMPTracker.queue.enqueue
 import io.github.frankois944.matomoKMPTracker.utils.ConcurrentMutableList
 import io.github.frankois944.matomoKMPTracker.utils.startTimer
-import io.ktor.http.*
-import kotlinx.coroutines.*
+import io.ktor.http.Url
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-
-public expect abstract class NativeContext
 
 public class Tracker private constructor(
     internal val url: String,
@@ -30,7 +40,7 @@ public class Tracker private constructor(
     internal val customUserAgent: String? = null,
     internal val customQueue: Queue? = null,
     internal val customActionHostUrl: String? = null,
-    context: NativeContext?,
+    context: Any?,
 ) {
     internal var queue: Queue? = null
     internal var userPreferences: UserPreferences? = null
@@ -109,47 +119,50 @@ public class Tracker private constructor(
     }
 
     internal fun startDispatchEvents() {
-        coroutine.launch(Dispatchers.Unconfined) {
+        coroutine.launch(Dispatchers.Default) {
             logger.log("Start Dispatchers timer", LogLevel.Debug)
             startTimer(dispatchInterval) {
-                logger.log("Start checking for new event", LogLevel.Info)
-                if (isDispatching) {
-                    logger.log("Already dispatching events", LogLevel.Verbose)
-                    return@startTimer
-                }
-                if (queue?.eventCount() == 0L) {
-                    logger.log("No events to dispatch", LogLevel.Verbose)
-                    return@startTimer
-                }
-                isDispatching = true
-                logger.log("Start dispatching events", LogLevel.Info)
-                while (dispatchBatch()) {
+                mutex.withLock {
+                    logger.log("Start checking for new event", LogLevel.Info)
+                    if (isDispatching) {
+                        logger.log("Already dispatching events", LogLevel.Verbose)
+                        return@startTimer
+                    }
+                    if (queue?.eventCount() == 0L) {
+                        logger.log("No events to dispatch", LogLevel.Verbose)
+                        return@startTimer
+                    }
+                    isDispatching = true
+                    logger.log("Start dispatching events", LogLevel.Info)
+                    dispatchBatch()
                     logger.log("Events dispatched", LogLevel.Info)
+                    isDispatching = false
                 }
-                isDispatching = false
             }
         }
     }
 
-    internal suspend fun dispatchBatch(): Boolean {
+    internal suspend fun dispatchBatch() {
         logger.log("Start Dispatch events", LogLevel.Debug)
         val items = queue?.first(numberOfEventsDispatchedAtOnce)
         if (items == null || items.isEmpty()) {
             logger.log("No events to dispatch", LogLevel.Verbose)
-            return false
+        } else {
+            items.forEach { item ->
+                logger.log("Sending event ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                try {
+                    dispatcher.sendSingleEvent(item)
+                    logger.log("remove events ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                    queue?.remove(listOf(item))
+                } catch (e: IllegalArgumentException) {
+                    logger.log("remove events ${items.joinToString { "${it.uuid}," }}", LogLevel.Verbose)
+                    queue?.remove(listOf(item))
+                    logger.log("Invalid request data, remove from cache: $e", LogLevel.Error)
+                } catch (e: Exception) {
+                    logger.log("Error while dispatching events: $e", LogLevel.Error)
+                }
+            }
         }
-        logger.log("Found ${items.size} events", LogLevel.Debug)
-        try {
-            dispatcher.send(items)
-            queue?.remove(items)
-            return true
-        } catch (e: IllegalArgumentException) {
-            queue?.remove(items)
-            logger.log("Invalid request data, remove from cache: $e", LogLevel.Error)
-        } catch (e: Exception) {
-            logger.log("Error while dispatching events: $e", LogLevel.Error)
-        }
-        return false
     }
 
     public companion object {
@@ -161,7 +174,7 @@ public class Tracker private constructor(
          * - On Apple and Android targets, by default, it's the applicationId/packageName.
          * - On the wasm target, by default, it's the current hostname of the browser.
          * - On Desktop, by default, it's null, but it's RECOMMENDED to set a value by yourself.
-         * @param context (MANDATORY for Android target) An Android Context for content retrieval
+         * @param context (MANDATORY for Android target) A valid Android Context for content retrieval
          * @param customUserAgent Set a custom userAgent for every request
          * @param customDispatcher
          * @param customQueue
@@ -172,7 +185,7 @@ public class Tracker private constructor(
             siteId: Int,
             tokenAuth: String? = null,
             customActionHostUrl: String? = null,
-            context: NativeContext? = null,
+            context: Any? = null,
             customUserAgent: String? = null,
             customDispatcher: Dispatcher? = null,
             customQueue: Queue? = null,
@@ -192,21 +205,14 @@ public class Tracker private constructor(
     internal fun queue(
         event: Event,
         nextEventStartsANewSession: Boolean,
-        isHeartBeat: Boolean = false,
     ) {
         coroutine.launch(Dispatchers.Default) {
             userPreferences?.let { userPreferences ->
                 if (isOptedOut()) return@launch
                 event.visitor = Visitor.current(userPreferences)
-                if (isHeartBeat) {
-                    dispatcher.sendPing(event)
-                } else {
-                    event.isNewSession = nextEventStartsANewSession
-                    this@Tracker.mutex.withLock {
-                        logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
-                        this@Tracker.queue?.enqueue(event)
-                    }
-                }
+                event.isNewSession = nextEventStartsANewSession
+                logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
+                this@Tracker.queue?.enqueue(event)
             }
         }
     }
@@ -303,7 +309,7 @@ public class Tracker private constructor(
         target: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 contentName = name,
                 contentPiece = piece,
@@ -328,7 +334,7 @@ public class Tracker private constructor(
         target: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 contentInteraction = interaction,
                 contentName = name,
@@ -339,7 +345,7 @@ public class Tracker private constructor(
         )
     }
 
-    // <editor-fold desc="Track actions">
+// <editor-fold desc="Track actions">
 
     /**
      * Tracks a screenview.
@@ -356,7 +362,7 @@ public class Tracker private constructor(
         dimensions: List<CustomDimension> = emptyList(),
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = view,
                 url = url,
@@ -380,12 +386,12 @@ public class Tracker private constructor(
         category: String,
         action: String,
         name: String? = null,
-        value: Float? = null,
+        value: Double? = null,
         dimensions: List<CustomDimension> = emptyList(),
         url: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = listOf(action),
                 url = url,
@@ -407,10 +413,10 @@ public class Tracker private constructor(
      */
     public fun trackGoal(
         goalId: Int,
-        revenue: Float,
+        revenue: Double,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 goalId = goalId,
                 revenue = revenue,
@@ -433,14 +439,14 @@ public class Tracker private constructor(
     public fun trackOrder(
         id: String,
         items: List<OrderItem>,
-        revenue: Float,
-        subTotal: Float? = null,
-        tax: Float? = null,
-        shippingCost: Float? = null,
-        discount: Float? = null,
+        revenue: Double,
+        subTotal: Double? = null,
+        tax: Double? = null,
+        shippingCost: Double? = null,
+        discount: Double? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this@Tracker,
                 orderId = id,
                 orderItems = items,
@@ -471,7 +477,7 @@ public class Tracker private constructor(
         url: String? = null,
     ) {
         track(
-            Event(
+            Event.create(
                 tracker = this,
                 action = emptyList(),
                 url = url,
@@ -483,9 +489,9 @@ public class Tracker private constructor(
             ),
         )
     }
-    // </editor-fold>
+// </editor-fold>
 
-    // <editor-fold desc="Dimension">
+// <editor-fold desc="Dimension">
 
     /**
      * Set a permanent custom dimension by value and index.
@@ -515,7 +521,7 @@ public class Tracker private constructor(
             }
         }
     }
-    // </editor-fold>
+// </editor-fold>
 
     /**
      * Starts a new Session

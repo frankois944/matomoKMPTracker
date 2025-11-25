@@ -15,7 +15,7 @@ internal actual object UserAgentProvider {
     fun getHttpAgent(): String? =
         runBlocking {
             val context = ContextObject.context?.get()
-            requireNotNull(context) { "NativeContext must be not null" }
+            requireNotNull(context) { "Android Context must be not null" }
             withContext(Dispatchers.Default) {
                 WebSettings.getDefaultUserAgent(context)
             }

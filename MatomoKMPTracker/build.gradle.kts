@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.sqlDelight)
 }
 
 group = "io.github.frankois944"
@@ -49,6 +48,8 @@ kotlin {
             xcf.add(this)
             binaryOption("bundleId", "${group}${productName.lowercase()}")
             binaryOption("bundleVersion", version.toString())
+            export(project(":core"))
+            linkerOpts("-lsqlite3")
         }
     }
 
@@ -85,8 +86,9 @@ kotlin {
             implementation(libs.ktor.logging)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.datetime)
+            implementation(project(":database"))
+            api(project(":core"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -94,12 +96,10 @@ kotlin {
         }
         appleMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.native.driver)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.android.driver)
         }
         androidUnitTest.dependencies {
             implementation(libs.robolectric)
@@ -109,27 +109,15 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(libs.ktor.client.java)
-                implementation(libs.sqlite.driver)
                 implementation(libs.oshi.core)
-                implementation(libs.okio)
             }
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
-            implementation(libs.web.worker.driver.wasm.js)
-            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
-            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-            implementation(npm("sql.js", "1.8.0"))
-            implementation(npm("@js-joda/timezone", "2.22.0"))
         }
 
         jsMain.dependencies {
             implementation(libs.ktor.client.js)
-            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
-            implementation(libs.web.worker.driver)
-            implementation(devNpm("copy-webpack-plugin", "9.1.0"))
-            implementation(npm("sql.js", "1.8.0"))
-            implementation(npm("@js-joda/timezone", "2.22.0"))
         }
     }
 }
@@ -183,15 +171,6 @@ mavenPublishing {
         }
         scm {
             url = "https://github.com/frankois944/matomoKMPTracker"
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        create("CacheDatabase") {
-            packageName = "io.github.frankois944.matomoKMPTracker"
-            generateAsync = true
         }
     }
 }
