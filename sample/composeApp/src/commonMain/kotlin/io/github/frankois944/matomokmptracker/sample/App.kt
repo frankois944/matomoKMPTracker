@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import io.github.frankois944.matomoKMPTracker.NativeContext
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -22,7 +21,7 @@ import matomokmptrackersample.composeapp.generated.resources.compose_multiplatfo
 
 @Composable
 @Preview
-fun App(context: NativeContext? = null) {
+fun App(context: Any? = null) {
 
     LaunchedEffect(context) {
         MatomoTracker.create(context)
@@ -42,7 +41,7 @@ fun App(context: NativeContext? = null) {
                 MatomoTracker.current.trackEventWithCategory(
                     "Button",
                     action = "Click me!",
-                    value = if (showContent) 1f else 0f
+                    value = if (showContent) 1.0 else 0.0
                 )
             }) {
                 Text("Click me!")
