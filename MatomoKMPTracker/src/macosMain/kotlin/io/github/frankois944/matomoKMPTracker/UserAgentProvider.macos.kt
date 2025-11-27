@@ -6,10 +6,7 @@ package io.github.frankois944.matomoKMPTracker
 import kotlinx.cinterop.ExperimentalForeignApi
 
 internal actual object UserAgentProvider {
-    actual fun getUserAgent(): String {
-        val device = Device.create()
-        return "Darwin/${device.softwareId} (Macintosh; ${device.model}; Mac OS X ${device.osVersion})"
-    }
+    actual fun getUserAgent(): String = "Darwin/${Device.softwareId} (Macintosh; ${Device.model}; Mac OS X ${Device.osVersion})"
 
     actual fun getClientHint(): String =
         (
