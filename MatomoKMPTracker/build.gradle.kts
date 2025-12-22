@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
@@ -6,7 +7,7 @@ import java.util.Locale
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlinx.serialization)
 }
@@ -19,11 +20,23 @@ kotlin {
 
     explicitApi()
     jvm("desktop")
-    androidTarget {
+    androidLibrary {
+        namespace = "$group.$productName"
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        withJava() // enable java compilation support
+        withHostTestBuilder {}.configure {}
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(
+                JvmTarget.JVM_11,
+            )
         }
-        publishLibraryVariants("release", "debug")
     }
 
     val xcf = XCFramework()
@@ -101,7 +114,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
         }
-        androidUnitTest.dependencies {
+        getByName("androidHostTest").dependencies {
             implementation(libs.robolectric)
             implementation(libs.mockito.core)
             implementation(libs.core)
@@ -119,24 +132,6 @@ kotlin {
         jsMain.dependencies {
             implementation(libs.ktor.client.js)
         }
-    }
-}
-
-android {
-    namespace = "$group.$productName"
-    compileSdk =
-        libs.versions.android.compileSdk
-            .get()
-            .toInt()
-    defaultConfig {
-        minSdk =
-            libs.versions.android.minSdk
-                .get()
-                .toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 

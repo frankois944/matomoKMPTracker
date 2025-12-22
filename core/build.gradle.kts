@@ -1,9 +1,12 @@
+@file:Suppress("UnstableApiUsage")
+
+import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.vanniktech.mavenPublish)
 }
@@ -16,9 +19,21 @@ kotlin {
 
     explicitApi()
     jvm("desktop")
-    androidTarget {
+    androidLibrary {
+        namespace = "$group.$productName"
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        withJava() // enable java compilation support
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(
+                JvmTarget.JVM_11,
+            )
         }
     }
 
@@ -45,24 +60,6 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.cbor)
         }
-    }
-}
-
-android {
-    namespace = "$group.$productName"
-    compileSdk =
-        libs.versions.android.compileSdk
-            .get()
-            .toInt()
-    defaultConfig {
-        minSdk =
-            libs.versions.android.minSdk
-                .get()
-                .toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
