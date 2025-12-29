@@ -31,13 +31,12 @@ jobs:
         run: |
           ./gradlew MatomoKMPTracker:assembleMatomoKMPTrackerReleaseXCFramework
           zip -9 -r MatomoKMPTracker.xcframework.zip ./MatomoKMPTracker/build/XCFrameworks/release/MatomoKMPTracker.xcframework
-      - uses: svenstaro/upload-release-action@v2
+      - name: Upload XCFramework to Release
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: MatomoKMPTracker.xcframework.zip
-          asset_name: MatomoKMPTracker.xcframework.zip
-          tag: ${{ github.ref }}
-          overwrite: true
+          files: MatomoKMPTracker.xcframework.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to MavenCentral
         run: ./gradlew publishAllPublicationsToMavenCentralRepository --no-configuration-cache
         env:
