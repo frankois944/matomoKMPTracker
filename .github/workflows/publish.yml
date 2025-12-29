@@ -35,7 +35,8 @@ jobs:
       - name: Generate xcframeworks
         run: |
           ./gradlew MatomoKMPTracker:assembleMatomoKMPTrackerReleaseXCFramework
-          zip -9 -r MatomoKMPTracker.xcframework.zip ./MatomoKMPTracker/build/XCFrameworks/release/MatomoKMPTracker.xcframework
+          cd ./MatomoKMPTracker/build/XCFrameworks/release/ && zip -9 -r MatomoKMPTracker.xcframework.zip MatomoKMPTracker.xcframework
+          mv ./MatomoKMPTracker/build/XCFrameworks/release/MatomoKMPTracker.xcframework.zip ./MatomoKMPTracker.xcframework.zip
       - name: Upload XCFramework to Release
         uses: softprops/action-gh-release@v2
         with:
