@@ -41,15 +41,15 @@ kotlin {
 
     val xcf = XCFramework()
     listOf(
-        iosX64(),
+        // iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
-        tvosX64(),
+        // tvosX64(),
         tvosArm64(),
         tvosSimulatorArm64(),
-        macosX64(),
+        // macosX64(),
         macosArm64(),
-        watchosX64(),
+        // watchosX64(),
         watchosArm64(),
         watchosSimulatorArm64(),
     ).forEach {
@@ -60,7 +60,8 @@ kotlin {
                 }
             xcf.add(this)
             binaryOption("bundleId", "${group}${productName.lowercase()}")
-            binaryOption("bundleVersion", version.toString())
+            binaryOption("bundleShortVersionString", version.toString())
+            binaryOption("bundleVersion", "1")
             export(project(":core"))
             linkerOpts("-lsqlite3")
         }
