@@ -2,6 +2,10 @@ name: Publish
 on:
   release:
     types: [released, prereleased]
+
+permissions:
+  contents: write
+
 jobs:
   publish:
     name: Release build and publish
