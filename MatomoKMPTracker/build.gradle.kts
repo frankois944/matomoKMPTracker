@@ -60,7 +60,8 @@ kotlin {
                 }
             xcf.add(this)
             binaryOption("bundleId", "${group}${productName.lowercase()}")
-            binaryOption("bundleVersion", version.toString())
+            binaryOption("bundleShortVersionString", version.toString())
+            binaryOption("bundleVersion", "1")
             export(project(":core"))
             linkerOpts("-lsqlite3")
         }
