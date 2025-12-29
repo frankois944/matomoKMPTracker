@@ -2,6 +2,7 @@
 
 package io.github.frankois944.matomoKMPTracker
 
+import co.touchlab.skie.configuration.annotations.DefaultArgumentInterop
 import io.github.frankois944.matomoKMPTracker.context.storeContext
 import io.github.frankois944.matomoKMPTracker.core.CustomDimension
 import io.github.frankois944.matomoKMPTracker.core.Event
@@ -20,10 +21,6 @@ import io.github.frankois944.matomoKMPTracker.utils.startTimer
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -179,6 +176,8 @@ public class Tracker private constructor(
          * @param customQueue
          */
         @Throws(IllegalArgumentException::class, CancellationException::class)
+        @DefaultArgumentInterop.Enabled
+        @DefaultArgumentInterop.MaximumDefaultArgumentCount(6)
         public suspend fun create(
             url: String,
             siteId: Int,

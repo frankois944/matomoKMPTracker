@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlinx.serialization)
+    id("co.touchlab.skie") version "0.10.8"
 }
 
 group = "io.github.frankois944"
@@ -102,6 +103,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(project(":database"))
+            implementation("co.touchlab.skie:configuration-annotations:0.10.8")
             api(project(":core"))
         }
         commonTest.dependencies {
@@ -189,4 +191,10 @@ tasks.withType<KotlinNativeSimulatorTest>().configureEach {
     dependsOn("bootIOSSimulator")
     standalone.set(false)
     device.set(deviceName)
+}
+
+skie {
+    build {
+        produceDistributableFramework()
+    }
 }
