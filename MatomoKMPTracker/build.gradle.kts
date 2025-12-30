@@ -1,3 +1,4 @@
+import co.touchlab.skie.configuration.DefaultArgumentInterop
 import com.android.build.api.dsl.androidLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -196,5 +197,10 @@ tasks.withType<KotlinNativeSimulatorTest>().configureEach {
 skie {
     build {
         produceDistributableFramework()
+    }
+    features {
+        group {
+            DefaultArgumentInterop.Enabled(true) // or false
+        }
     }
 }
