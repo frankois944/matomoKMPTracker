@@ -24,7 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -34,6 +33,7 @@ public class Tracker private constructor(
     internal val siteId: Int,
     internal val tokenAuth: String? = null,
     internal val customDispatcher: Dispatcher? = null,
+    internal var isOptedOut: Boolean = false,
     internal val customUserAgent: String? = null,
     internal val customQueue: Queue? = null,
     internal val customActionHostUrl: String? = null,
@@ -62,6 +62,23 @@ public class Tracker private constructor(
      */
     public var logger: MatomoTrackerLogger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Warning)
 
+    /**
+     * Indicates whether the tracker is ready for use.
+     *
+     * This property reflects the current initialization state of the `Tracker` instance.
+     * When `true`, the tracker is fully configured and can perform its intended operations,
+     * such as event tracking and data dispatching ONLINE.
+     * If `false`, the tracker is still currently initializing and store event InMemory.
+     */
+    public var isReady: Boolean = false
+
+    /**
+     * As the startup of the analytics must be async,
+     * we need to store events, user properties, and other startup data InMemory
+     * Until the analytics is initialized then InMemory data is flushed
+     */
+    internal var startupData: StartupCache? = StartupCache()
+
     init {
         require(url.endsWith("matomo.php")) {
             "The url must end with 'matomo.php'"
@@ -82,35 +99,38 @@ public class Tracker private constructor(
         heartbeat = HeartBeat(this)
     }
 
-    internal suspend fun build(): Tracker {
-        withContext(Dispatchers.Default) {
-            val scope = "${siteId}_${siteUrl.host}"
-            // Dispatcher
-            dispatcher =
-                customDispatcher ?: HttpClientDispatcher(
-                    baseURL = url,
-                    userAgent = customUserAgent,
-                    onPrintLog = { message ->
-                        logger.log(message = message, LogLevel.Debug)
-                    },
-                    tokenAuth = tokenAuth,
-                )
+    internal fun build(): Tracker {
+        val scope = "${siteId}_${siteUrl.host}"
+        // Dispatcher
+        dispatcher =
+            customDispatcher ?: HttpClientDispatcher(
+                baseURL = url,
+                userAgent = customUserAgent,
+                onPrintLog = { message ->
+                    logger.log(message = message, LogLevel.Debug)
+                },
+                tokenAuth = tokenAuth,
+            )
+        coroutine.launch(Dispatchers.Default) {
             // Database
             val database =
                 createDatabase(
                     driverFactory = DriverFactory(),
                     dbName = scope.hashCode().toString(),
                 )
-            this@Tracker.queue = customQueue ?: DatabaseQueue(database, scope)
-            this@Tracker.userPreferences = UserPreferences(database, scope)
-
-            // Startup
-            startNewSession()
-            startDispatchEvents()
-            if (userPreferences?.isHeartbeatEnabled() == true) {
+            val queue = customQueue ?: DatabaseQueue(database, scope)
+            val userPreferences = UserPreferences(database, scope)
+            startupData?.flush(queue, userPreferences)
+            this@Tracker.userPreferences = userPreferences
+            this@Tracker.queue = queue
+            isReady = true
+            if (userPreferences.isHeartbeatEnabled()) {
                 heartbeat.start()
             }
+            startDispatchEvents()
         }
+        // Startup
+        startNewSession()
         return this
     }
 
@@ -141,7 +161,7 @@ public class Tracker private constructor(
     internal suspend fun dispatchBatch() {
         logger.log("Start Dispatch events", LogLevel.Debug)
         val items = queue?.first(numberOfEventsDispatchedAtOnce)
-        if (items == null || items.isEmpty()) {
+        if (items.isNullOrEmpty()) {
             logger.log("No events to dispatch", LogLevel.Verbose)
         } else {
             items.forEach { item ->
@@ -178,7 +198,7 @@ public class Tracker private constructor(
         @Throws(IllegalArgumentException::class, CancellationException::class)
         @DefaultArgumentInterop.Enabled
         @DefaultArgumentInterop.MaximumDefaultArgumentCount(6)
-        public suspend fun create(
+        public fun create(
             url: String,
             siteId: Int,
             tokenAuth: String? = null,
@@ -204,13 +224,19 @@ public class Tracker private constructor(
         event: Event,
         nextEventStartsANewSession: Boolean,
     ) {
-        coroutine.launch(Dispatchers.Default) {
-            userPreferences?.let { userPreferences ->
-                if (isOptedOut()) return@launch
-                event.visitor = Visitor.current(userPreferences)
-                event.isNewSession = nextEventStartsANewSession
-                logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
-                this@Tracker.queue?.enqueue(event)
+        if (!isReady && !isOptedOut) {
+            logger.log("Not yet initialized, store event InMemory", LogLevel.Info)
+            event.isNewSession = nextEventStartsANewSession
+            startupData?.addEvent(event)
+        } else {
+            coroutine.launch(Dispatchers.Default) {
+                userPreferences?.let { userPreferences ->
+                    if (isOptedOut()) return@launch
+                    event.visitor = Visitor.current(userPreferences)
+                    event.isNewSession = nextEventStartsANewSession
+                    logger.log("Queued event: ${event.uuid}", LogLevel.Verbose)
+                    this@Tracker.queue?.enqueue(event)
+                }
             }
         }
     }
@@ -219,13 +245,22 @@ public class Tracker private constructor(
      * Defines if the user opted out of tracking. When set to true, every event
      * will be discarded immediately. This property is persisted between app launches.
      */
-    public suspend fun isOptedOut(): Boolean = userPreferences?.optOut() ?: false
+    public suspend fun isOptedOut(): Boolean = userPreferences?.optOut() ?: this.isOptedOut
 
     /**
      * Defines if the user opted out of tracking. When set to true, every event
      * will be discarded immediately. This property is persisted between app launches.
      */
-    public suspend fun setOptOut(value: Boolean): Unit? = userPreferences?.setOptOut(value)
+    public suspend fun setOptOut(value: Boolean) {
+        this@Tracker.isOptedOut = value
+        userPreferences?.setOptOut(value)?.run {
+            logger.log(
+                "Not yet initialized, store setOptOut InMemory",
+                LogLevel.Info,
+            )
+            startupData?.isOptOut = IsOptOut(value)
+        }
+    }
 
     /**
      * Get the heartbeat tracking state for the user.
@@ -258,7 +293,13 @@ public class Tracker private constructor(
      */
     public suspend fun setUserId(value: String?) {
         logger.log("Setting the userId to $value", LogLevel.Debug)
-        userPreferences?.setUserId(value)
+        userPreferences?.setUserId(value) ?: run {
+            logger.log(
+                "Not yet initialized, store UserId InMemory",
+                LogLevel.Info,
+            )
+            startupData?.userId = UserId(value)
+        }
     }
 
     /**

@@ -33,13 +33,16 @@ class EventTest {
                 url = "https://matomo.spmforkmp.eu/matomo.php",
                 siteId = siteId,
             ).also {
+                while (!it.isReady) { // the init of the Tracker is async
+                    delay(500.milliseconds)
+                }
                 it.setIsHeartBeat(false)
                 it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
                 it.dispatchBatch()
                 it.queue!!.removeAll()
                 assertEquals(
                     emptyList(),
-                    it.queue!!.first(10),
+                    it.queue!!.first(1),
                     "Must remain 0 event on start",
                 )
             }
@@ -225,11 +228,16 @@ class EventTest {
                 return@runTest
             }
             launch(Dispatchers.Default) {
-                val tracker = getTracker()
+                val tracker =
+                    Tracker
+                        .create(
+                            url = "https://matomo.spmforkmp.eu/matomo.php",
+                            siteId = siteId,
+                        )
                 tracker.trackEventWithCategory(
-                    category = "event cat1",
-                    action = "event action1",
-                    name = "event name1",
+                    category = "event cat2",
+                    action = "event action2",
+                    name = "event name2",
                     value = 1.0,
                 )
                 waitAllEventSent(tracker)
