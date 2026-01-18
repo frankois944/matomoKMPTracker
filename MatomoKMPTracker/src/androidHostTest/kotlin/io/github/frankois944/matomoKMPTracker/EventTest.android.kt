@@ -6,10 +6,12 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.AfterTest
@@ -54,9 +56,9 @@ class EventTestAndroid {
         }
     }
 
-    @kotlin.test.Test
+    @Test
     fun testPageView() =
-        runTest(timeout = 30.seconds) {
+        runTest {
             /*val queuedEvents = mutableListOf<Event>()
 
             val queue: Queue =
@@ -77,34 +79,36 @@ class EventTestAndroid {
                         // no-op
                     }
                 }*/
-            val tracker =
-                Tracker
-                    .create(
-                        url = "https://matomo.spmforkmp.eu/matomo.php",
-                        siteId = siteId,
-                        context = ApplicationProvider.getApplicationContext(),
-                        //   customQueue = queue,
-                    ).also {
-                        it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
-                    }
-            val nbVisit = 3
-            for (i in 1..nbVisit) {
-                tracker.startNewSession()
-                println("Session send $i")
-                tracker.trackView(listOf("index1"))
-                delay(50.milliseconds)
-                tracker.trackView(listOf("index2"))
-                delay(50.milliseconds)
-                tracker.trackView(listOf("index3"))
-                delay(50.milliseconds)
-                tracker.trackView(listOf("index4"))
-                delay(50.milliseconds)
-                tracker.trackView(listOf("index5"))
-                delay(50.milliseconds)
-                tracker.trackView(listOf("index6"))
-                delay(1.seconds)
+            launch(Dispatchers.IO) {
+                val tracker =
+                    Tracker
+                        .create(
+                            url = "https://matomo.spmforkmp.eu/matomo.php",
+                            siteId = siteId,
+                            context = ApplicationProvider.getApplicationContext(),
+                            //   customQueue = queue,
+                        ).also {
+                            it.logger = DefaultMatomoTrackerLogger(minLevel = LogLevel.Verbose)
+                        }
+                val nbVisit = 3
+                for (i in 1..nbVisit) {
+                    tracker.startNewSession()
+                    println("Session send $i")
+                    tracker.trackView(listOf("index1"))
+                    delay(50.milliseconds)
+                    tracker.trackView(listOf("index2"))
+                    delay(50.milliseconds)
+                    tracker.trackView(listOf("index3"))
+                    delay(50.milliseconds)
+                    tracker.trackView(listOf("index4"))
+                    delay(50.milliseconds)
+                    tracker.trackView(listOf("index5"))
+                    delay(50.milliseconds)
+                    tracker.trackView(listOf("index6"))
+                    delay(1.seconds)
+                }
+                waitAllEventSent(tracker)
             }
-            waitAllEventSent(tracker)
             /*queuedEvents.forEach {
                 println("---")
                 println("DATE = ${it.date}")

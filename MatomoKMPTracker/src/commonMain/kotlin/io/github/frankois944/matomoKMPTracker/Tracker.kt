@@ -224,12 +224,12 @@ public class Tracker private constructor(
         event: Event,
         nextEventStartsANewSession: Boolean,
     ) {
-        if (!isReady && !isOptedOut) {
-            logger.log("Not yet initialized, store event InMemory", LogLevel.Info)
-            event.isNewSession = nextEventStartsANewSession
-            startupData?.addEvent(event)
-        } else {
-            coroutine.launch(Dispatchers.Default) {
+        coroutine.launch(Dispatchers.Default) {
+            if (!isReady && !isOptedOut) {
+                logger.log("Not yet initialized, store event InMemory", LogLevel.Info)
+                event.isNewSession = nextEventStartsANewSession
+                startupData?.addEvent(event)
+            } else {
                 userPreferences?.let { userPreferences ->
                     if (isOptedOut()) return@launch
                     event.visitor = Visitor.current(userPreferences)

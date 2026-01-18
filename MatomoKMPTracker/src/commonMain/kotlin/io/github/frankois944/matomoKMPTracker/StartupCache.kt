@@ -4,6 +4,7 @@ import io.github.frankois944.matomoKMPTracker.core.Event
 import io.github.frankois944.matomoKMPTracker.core.Visitor
 import io.github.frankois944.matomoKMPTracker.core.queue.Queue
 import io.github.frankois944.matomoKMPTracker.preferences.UserPreferences
+import io.github.frankois944.matomoKMPTracker.utils.ConcurrentMutableList
 import kotlin.jvm.JvmInline
 
 @JvmInline
@@ -27,13 +28,13 @@ internal value class AdPersonalizationEnabled(
 )
 
 internal class StartupCache(
-    val events: MutableList<Event> = mutableListOf(),
+    val events: ConcurrentMutableList<Event> = ConcurrentMutableList(),
     var userId: UserId? = null,
     var adUserDataEnabled: AdUserDataEnabled? = null,
     var adPersonalizationEnabled: AdPersonalizationEnabled? = null,
     var isOptOut: IsOptOut? = null,
 ) {
-    fun addEvent(event: Event) {
+    suspend fun addEvent(event: Event) {
         events.add(event)
     }
 
@@ -47,11 +48,11 @@ internal class StartupCache(
         isOptOut?.let { isOptOut ->
             userPreferences.setOptOut(isOptOut.value)
         }
-        events.forEach { event ->
+        events.getAll().forEach { event ->
             if (event.visitor == null) {
                 event.visitor = Visitor.current(userPreferences)
             }
         }
-        queue.enqueue(events)
+        queue.enqueue(events.getAll())
     }
 }
