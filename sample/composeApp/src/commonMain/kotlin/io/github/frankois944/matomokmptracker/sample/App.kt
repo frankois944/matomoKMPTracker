@@ -13,27 +13,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
 import matomokmptrackersample.composeapp.generated.resources.Res
 import matomokmptrackersample.composeapp.generated.resources.compose_multiplatform
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
 fun App(context: Any? = null) {
-
     LaunchedEffect(context) {
-        MatomoTracker.create(context)
+        MatomoTracker.initialize(context)
     }
 
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
+            modifier =
+                Modifier
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .safeContentPadding()
+                    .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Button(onClick = {
@@ -41,7 +40,7 @@ fun App(context: Any? = null) {
                 MatomoTracker.current.trackEventWithCategory(
                     "Button",
                     action = "Click me!",
-                    value = if (showContent) 1.0 else 0.0
+                    value = if (showContent) 1.0 else 0.0,
                 )
             }) {
                 Text("Click me!")

@@ -11,6 +11,8 @@
       <option name="taskNames">
         <list>
           <option value="MatomoKMPTracker:publishToMavenLocal" />
+          <option value="core:publishToMavenLocal" />
+          <option value="database:publishToMavenLocal" />
         </list>
       </option>
       <option name="vmOptions" />
